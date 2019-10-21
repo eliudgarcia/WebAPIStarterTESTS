@@ -7,17 +7,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using WebAPIStarterData.Models;
 using WebAPIBase.Services;
-using WebAPIStartData;
+using WebAPIStarterData;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+using FluentAssertions;
 
 namespace WebAPIStartTests.Tests
 {
     public class InMemoryDatabaseCustomerServiceTests : IDisposable
     {
-        private WebAPIStartContext context;
+        private WebAPIStarterContext context;
         public InMemoryDatabaseCustomerServiceTests()
         {
-            var options = DbContextOptionsBuilder<WebAPIStartContext>().InMemoryDatabase("mock-CustomerService").Options;
-            context= new WebAPIStartContext(options);
+            var options = new DbContextOptionsBuilder<WebAPIStarterContext>().UseInMemoryDatabase("mock-CustomerService").Options;
+            context= new WebAPIStarterContext(options);
         }
 
         [Fact]
@@ -30,12 +33,12 @@ namespace WebAPIStartTests.Tests
             LastName="Garcia",
             Email="e@email.com"
         };
-        var SUT = new InMemoryDatabaseCustomerServiceTests(context);
+        var SUT = new InMemoryDatabaseCustomerService(context);
         //When
         var newCustomer = SUT.Add(fakeCustomer);
 
         //Then
-        context.Customer.Find(newCustomer.Id).Should().BeEquivalentTo(newCustomer);
+        context.Customers.Find(newCustomer.Id).Should().BeEquivalentTo(newCustomer);
         }
 
 
@@ -49,13 +52,13 @@ namespace WebAPIStartTests.Tests
             LastName="Garcia",
             Email="e@email.com"
         };
-        var SUT = new InMemoryDatabaseCustomerServiceTests(context);
+        var SUT = new InMemoryDatabaseCustomerService(context);
         //When
-        var newCustomer = SUT.Add(fakeCustomer).Entity;
+        var newCustomer = SUT.Add(fakeCustomer);
 
         //Then
-        var deletedCustomer = SUT.Delete(newCustomer.Id);
-        context.Customer.Find(newCustomer.Id).Should().BeNUll();
+        SUT.Delete(((Customer)newCustomer));
+        context.Customers.Find(newCustomer.Id).Should().BeNull();
         }
 
         public void Dispose(){
